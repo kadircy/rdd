@@ -1,0 +1,16 @@
+[package]
+name = "rdd"
+version = "0.1.0"
+authors = ["kadircy"]
+edition = "2021"
+description = "simple library to interact with `dd` tool"
+documentation = "https://docs.rs/rdd/latest/rdd"
+readme = "README.md"
+homepage = "https://github.com/kadircy/rdd"
+repository = "https://github.com/kadircy/rdd"
+license = "MIT"
+keywords = ["linux", "dd", "iso", "files"]
+categories = ["filesystem"]
+
+[dependencies]
+thiserror = "2.0.11"

@@ -1,4 +1,8 @@
 # `rdd`
+![Crates.io License](https://img.shields.io/crates/l/rdd)
+![Crates.io Version](https://img.shields.io/crates/v/rdd)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/kadircy/rdd/rust.yml)
+
 `rdd` is a simple Rust library to interact with the `dd` command-line tool. It provides an easy way to configure and execute `dd` commands from Rust, with options like input and output files, block sizes, and more.
 
 ## Installation

@@ -89,7 +89,7 @@ impl Dd {
                 let version_parts: Vec<&str> = version_str
                     .split_whitespace()
                     .nth(2)
-                    .unwrap_or_default()
+                    .ok_or_else(|| DdError::InvalidFormat)?
                     .split('.')
                     .collect();
 

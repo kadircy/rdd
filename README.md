@@ -59,7 +59,7 @@ Contributions are welcome! If you’d like to contribute, please follow these st
 4. Push to your fork `git push origin feature-branch`.
 5. Open a pull request to the main repository.
 
-Please make sure your code follows the style and guidelines of the project and passes all the tests. You can format codebase and lint it with this commands:
+Please make sure your code follows the style and guidelines of the project and passes all the tests. You can format codebase, lint it and run tests with this commands:
 
 ```bash
 cargo fmt    # format

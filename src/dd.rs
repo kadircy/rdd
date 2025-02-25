@@ -16,9 +16,9 @@ pub enum DdError {
     #[error("Unable to convert stdout bytes to UTF-8 String.")]
     InvalidUTF8,
 
-    /// Error for invalid output format returned from the 'dd' command.
-    #[error("Invalid output format returned from 'dd' command.")]
-    InvalidFormat,
+    /// Error for invalid output returned from the 'dd' command.
+    #[error("Invalid output returned from 'dd' command.")]
+    InvalidOutput,
 
     /// Error when the 'dd' binary version is older than the minimum required.
     #[error("The binary version is smaller (older) than min version.")]
@@ -89,12 +89,12 @@ impl Dd {
                 let version_parts: Vec<&str> = version_str
                     .split_whitespace()
                     .nth(2)
-                    .ok_or_else(|| DdError::InvalidFormat)?
+                    .ok_or_else(|| DdError::InvalidOutput)?
                     .split('.')
                     .collect();
 
                 if version_parts.len() != 2 {
-                    return Err(DdError::InvalidFormat);
+                    return Err(DdError::InvalidOutput);
                 }
 
                 let version = (

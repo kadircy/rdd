@@ -35,7 +35,7 @@ pub struct Dd {
     min_version: Option<(u16, u16)>, // Optional minimum version for 'dd'.
     input: Option<String>,           // Optional input file.
     output: Option<String>,          // Optional output file.
-    options: Vec<(String, String)>,  // Additional arguments for the 'dd' command.
+    options: Vec<String>,            // Additional arguments for the 'dd' command.
 }
 
 impl Dd {
@@ -120,7 +120,7 @@ impl Dd {
     /// - `key`: The argument key (e.g., "bs").
     /// - `value`: The corresponding argument value (e.g., "64K").
     fn arg(&mut self, key: &str, value: &str) {
-        self.options.push((String::from(key), String::from(value)));
+        self.options.push(format!("{key}={value}"));
     }
 
     /// Sets the minimum version required for the 'dd' binary.
@@ -256,8 +256,8 @@ impl Dd {
         }
 
         // Add any additional options
-        for (key, value) in &self.options {
-            cmd.arg(format!("{key}={value}"));
+        for option in &self.options {
+            cmd.arg(option);
         }
 
         let output = cmd.output(); // Execute the command

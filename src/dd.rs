@@ -123,6 +123,25 @@ impl Dd {
         self.options.push(format!("{key}={value}"));
     }
 
+    /// Helper method to add arguments to given `Command` struct.
+    ///
+    /// # Parameters
+    /// - `cmd`: The `Command` struct
+    fn set_args(&mut self, cmd: &mut Command) -> Result<(), DdError> {
+        if let Some(input) = &self.input {
+            cmd.arg(format!("if={}", input));
+        } else {
+            return Err(DdError::NoInput);
+        }
+        if let Some(output) = &self.output {
+            cmd.arg(format!("of={}", output));
+        }
+        for option in &self.options {
+            cmd.arg(option);
+        }
+        Ok(())
+    }
+
     /// Sets the minimum version required for the 'dd' binary.
     ///
     /// # Parameters
@@ -240,25 +259,12 @@ impl Dd {
     /// # Returns
     /// - `Ok(String)` containing the command output if the process runs successfully.
     /// - `Err(DdError)` if an error occurs at any stage.
-    pub fn spawn(&self) -> Result<String, DdError> {
+    pub fn spawn(&mut self) -> Result<String, DdError> {
         self.check()?; // Ensure the 'dd' binary is available and valid.
 
         let mut cmd = Command::new(&self.binary);
 
-        // Add input file argument if specified
-        if let Some(input) = &self.input {
-            cmd.arg(format!("if={}", input));
-        }
-
-        // Add output file argument if specified
-        if let Some(output) = &self.output {
-            cmd.arg(format!("of={}", output));
-        }
-
-        // Add any additional options
-        for option in &self.options {
-            cmd.arg(option);
-        }
+        self.set_args(&mut cmd)?;
 
         let output = cmd.output(); // Execute the command
 

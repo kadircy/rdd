@@ -9,7 +9,7 @@ pub enum DdError {
     CantRun(std::io::Error),
 
     /// Error when the 'dd' binary is missing or corrupted.
-    #[error("The 'dd' binary is missing or corrupted. Maybe the system is not Linux.")]
+    #[error("The 'dd' binary is missing or corrupted.")]
     Missing,
 
     /// Error when converting stdout bytes to a UTF-8 string fails.
@@ -67,10 +67,15 @@ impl Dd {
     fn check(&self) -> Result<(), DdError> {
         let cmd = Command::new(&self.binary).arg("--version").output();
         match cmd {
-            Err(e) => Err(DdError::CantRun(e)),
+            Err(_) => Err(DdError::Missing),
             Ok(output) => {
                 if !output.status.success() {
-                    return Err(DdError::Missing);
+                    let stderr =
+                        String::from_utf8(output.stderr).map_err(|_| DdError::InvalidUTF8)?;
+                    return Err(DdError::CantRun(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        stderr,
+                    )));
                 }
 
                 // Convert stdout to String and check for UTF-8 validity

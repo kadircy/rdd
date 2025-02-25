@@ -28,6 +28,10 @@ fn dd_spawn_with_files() {
 
     let result = dd.spawn();
 
+    if result.is_err() {
+        eprintln!("{}", result.as_ref().unwrap_err());
+    }
+
     assert!(result.is_ok(), "dd command failed");
 
     // Verify that the output file exists after the command is executed

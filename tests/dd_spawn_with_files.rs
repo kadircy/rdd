@@ -19,14 +19,17 @@ fn dd_spawn_with_files() {
     }
 
     // Create a new Dd instance and configure it with the input, output, and other options
-    let mut dd = Dd::new("dd");
-    dd.input(input_file);
-    dd.output(output_file);
-    dd.bs("1M");
-    dd.count(1);
-    dd.status("none");
+    let result = Dd::new("dd")
+        .input(input_file)
+        .output(output_file)
+        .bs("1M")
+        .count(1)
+        .status("none")
+        .spawn();
 
-    let result = dd.spawn();
+    if result.is_err() {
+        eprintln!("{}", result.as_ref().unwrap_err());
+    }
 
     assert!(result.is_ok(), "dd command failed");
 

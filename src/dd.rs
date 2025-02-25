@@ -9,16 +9,16 @@ pub enum DdError {
     CantRun(std::io::Error),
 
     /// Error when the 'dd' binary is missing or corrupted.
-    #[error("The 'dd' binary is missing or corrupted. Maybe the system is not Linux.")]
+    #[error("The 'dd' binary is missing or corrupted.")]
     Missing,
 
     /// Error when converting stdout bytes to a UTF-8 string fails.
     #[error("Unable to convert stdout bytes to UTF-8 String.")]
     InvalidUTF8,
 
-    /// Error for invalid output format returned from the 'dd' command.
-    #[error("Invalid output format returned from 'dd' command.")]
-    InvalidFormat,
+    /// Error for invalid output returned from the 'dd' command.
+    #[error("Invalid output returned from 'dd' command.")]
+    InvalidOutput,
 
     /// Error when the 'dd' binary version is older than the minimum required.
     #[error("The binary version is smaller (older) than min version.")]
@@ -35,7 +35,7 @@ pub struct Dd {
     min_version: Option<(u16, u16)>, // Optional minimum version for 'dd'.
     input: Option<String>,           // Optional input file.
     output: Option<String>,          // Optional output file.
-    options: Vec<(String, String)>,  // Additional arguments for the 'dd' command.
+    options: Vec<String>,            // Additional arguments for the 'dd' command.
 }
 
 impl Dd {
@@ -67,10 +67,15 @@ impl Dd {
     fn check(&self) -> Result<(), DdError> {
         let cmd = Command::new(&self.binary).arg("--version").output();
         match cmd {
-            Err(e) => Err(DdError::CantRun(e)),
+            Err(_) => Err(DdError::Missing),
             Ok(output) => {
                 if !output.status.success() {
-                    return Err(DdError::Missing);
+                    let stderr =
+                        String::from_utf8(output.stderr).map_err(|_| DdError::InvalidUTF8)?;
+                    return Err(DdError::CantRun(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        stderr,
+                    )));
                 }
 
                 // Convert stdout to String and check for UTF-8 validity
@@ -84,12 +89,12 @@ impl Dd {
                 let version_parts: Vec<&str> = version_str
                     .split_whitespace()
                     .nth(2)
-                    .unwrap_or_default()
+                    .ok_or_else(|| DdError::InvalidOutput)?
                     .split('.')
                     .collect();
 
                 if version_parts.len() != 2 {
-                    return Err(DdError::InvalidFormat);
+                    return Err(DdError::InvalidOutput);
                 }
 
                 let version = (
@@ -115,7 +120,26 @@ impl Dd {
     /// - `key`: The argument key (e.g., "bs").
     /// - `value`: The corresponding argument value (e.g., "64K").
     fn arg(&mut self, key: &str, value: &str) {
-        self.options.push((String::from(key), String::from(value)));
+        self.options.push(format!("{key}={value}"));
+    }
+
+    /// Helper method to add arguments to given `Command` struct.
+    ///
+    /// # Parameters
+    /// - `cmd`: The `Command` struct
+    fn set_args(&mut self, cmd: &mut Command) -> Result<(), DdError> {
+        if let Some(input) = &self.input {
+            cmd.arg(format!("if={}", input));
+        } else {
+            return Err(DdError::NoInput);
+        }
+        if let Some(output) = &self.output {
+            cmd.arg(format!("of={}", output));
+        }
+        for option in &self.options {
+            cmd.arg(option);
+        }
+        Ok(())
     }
 
     /// Sets the minimum version required for the 'dd' binary.
@@ -235,43 +259,26 @@ impl Dd {
     /// # Returns
     /// - `Ok(String)` containing the command output if the process runs successfully.
     /// - `Err(DdError)` if an error occurs at any stage.
-    pub fn spawn(&self) -> Result<String, DdError> {
+    pub fn spawn(&mut self) -> Result<String, DdError> {
         self.check()?; // Ensure the 'dd' binary is available and valid.
 
         let mut cmd = Command::new(&self.binary);
 
-        // Add input file argument if specified
-        if let Some(input) = &self.input {
-            cmd.arg(format!("if={}", input));
-        }
-
-        // Add output file argument if specified
-        if let Some(output) = &self.output {
-            cmd.arg(format!("of={}", output));
-        }
-
-        // Add any additional options
-        for (key, value) in &self.options {
-            cmd.arg(format!("{key}={value}"));
-        }
+        self.set_args(&mut cmd)?;
 
         let output = cmd.output(); // Execute the command
 
         match output {
-            Ok(output) => {
-                if !output.status.success() {
-                    return Err(DdError::CantRun(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "dd command failed",
-                    )));
-                }
-
+            Ok(output) if output.status.success() => {
                 // Convert stdout to String and return
-                let stdout = String::from_utf8(output.stdout).map_err(|_| DdError::InvalidUTF8)?;
-                Ok(stdout)
+                String::from_utf8(output.stdout).map_err(|_| DdError::InvalidUTF8)
             }
+            Ok(output) => Err(DdError::CantRun(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                String::from_utf8(output.stderr)
+                    .unwrap_or(String::from("unable to get stderr from 'dd'")),
+            ))),
             Err(e) => {
-                eprintln!("Error spawning dd command: {}", e);
                 Err(DdError::CantRun(e))
             }
         }

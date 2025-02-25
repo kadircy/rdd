@@ -15,7 +15,7 @@ use rdd::Dd;
 
 fn main() {
     // Create a new Dd instance with the 'dd' binary path
-    let dd = Dd::new("dd");
+    let mut dd = Dd::new("dd");
 
     // Set input and output files
     dd.input("./test.iso");

@@ -269,20 +269,16 @@ impl Dd {
         let output = cmd.output(); // Execute the command
 
         match output {
-            Ok(output) => {
-                if !output.status.success() {
-                    return Err(DdError::CantRun(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "dd command failed",
-                    )));
-                }
-
+            Ok(output) if output.status.success() => {
                 // Convert stdout to String and return
-                let stdout = String::from_utf8(output.stdout).map_err(|_| DdError::InvalidUTF8)?;
-                Ok(stdout)
+                String::from_utf8(output.stdout).map_err(|_| DdError::InvalidUTF8)
             }
+            Ok(output) => Err(DdError::CantRun(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                String::from_utf8(output.stderr)
+                    .unwrap_or(String::from("unable to get stderr from 'dd'")),
+            ))),
             Err(e) => {
-                eprintln!("Error spawning dd command: {}", e);
                 Err(DdError::CantRun(e))
             }
         }

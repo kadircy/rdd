@@ -7,6 +7,7 @@
 
 ### Changed
 - Use `Vec<String>` in options instead of `Vec<(String, String)>` for better performance and greater code.
+- Combine `match output` and `match output.stdout` into single block.
 
 ## [0.1.0] - 2025-02-04
 

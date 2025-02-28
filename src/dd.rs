@@ -94,7 +94,7 @@ impl Dd {
                 let version_parts: Vec<&str> = version_str
                     .split_whitespace()
                     .nth(2) // Get the version string from the third element.
-                    .ok_or_else(|| DdError::InvalidOutput)?
+                    .ok_or(DdError::InvalidOutput)?
                     .split('.')
                     .collect();
 

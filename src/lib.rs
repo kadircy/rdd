@@ -12,23 +12,21 @@
 //! ```rust
 //! use rdd::Dd;
 //!
-//! fn main() {
-//!     // Define the paths for input and output files
-//!     let input = "./source_file.txt";  // Path to the source file
-//!     let output = "./destination_file.txt"; // Path for the destination file
+//! // Define the paths for input and output files
+//! let input = "./source_file.txt";  // Path to the source file
+//! let output = "./destination_file.txt"; // Path for the destination file
 //!
-//!     // Create a Dd instance, set input, output, and block size, then run the command
-//!     let mut result = Dd::new("dd")
-//!         .input(input)
-//!         .output(output)
-//!         .bs("4M")
-//!         .spawn();  // Execute the dd command
+//! // Create a Dd instance, set input, output, and block size, then run the command
+//! let mut result = Dd::new("dd")
+//!     .input(input)
+//!     .output(output)
+//!     .bs("4M")
+//!     .spawn();  // Execute the dd command
 //!
-//!     // Handle the result of the dd command
-//!     match result {
-//!         Ok(output) => println!("Command succeeded: {}", output),
-//!         Err(e) => eprintln!("Error: {}", e),  // Print the error message if the command fails
-//!     }
+//! // Handle the result of the dd command
+//! match result {
+//!     Ok(output) => println!("Command succeeded: {}", output),
+//!     Err(e) => eprintln!("Error: {}", e),  // Print the error message if the command fails
 //! }
 //! ```
 //!

@@ -5,28 +5,28 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum DdError {
     /// Error when the subprocess for 'dd' cannot be created.
-    #[error("An error occurred while creating subprocess for 'dd': {0}")]
-    CantRun(std::io::Error),
+    #[error("Failed to spawn the 'dd' process: {0}")]
+    ProcessSpawnError(std::io::Error),
 
     /// Error when the 'dd' binary is missing or corrupted.
-    #[error("The 'dd' binary is missing or corrupted.")]
-    Missing,
+    #[error("'dd' binary is missing or corrupted.")]
+    BinaryMissing,
 
     /// Error when converting stdout bytes to a UTF-8 string fails.
-    #[error("Unable to convert stdout bytes to UTF-8 String.")]
-    InvalidUTF8,
+    #[error("Failed to decode the stdout output from 'dd' as UTF-8.")]
+    StdoutUTF8DecodeError,
 
     /// Error for invalid output returned from the 'dd' command.
-    #[error("Invalid output returned from 'dd' command.")]
-    InvalidOutput,
+    #[error("Unexpected or invalid output from 'dd' command.")]
+    InvalidCommandOutput,
 
     /// Error when the 'dd' binary version is older than the minimum required.
-    #[error("The binary version is smaller (older) than the min version.")]
-    OldVersion,
+    #[error("'dd' version is older than the required minimum version.")]
+    VersionTooOld,
 
     /// Error when no input is provided to the 'dd' command.
-    #[error("No input given to 'dd' program.")]
-    NoInput,
+    #[error("No input file specified for 'dd' command.")]
+    MissingInputFile,
 }
 
 /// Struct representing the configuration for running the 'dd' command.
@@ -70,14 +70,14 @@ impl Dd {
 
         match cmd {
             // If the command fails to run (for example, if 'dd' is missing), return an error.
-            Err(_) => Err(DdError::Missing),
+            Err(_) => Err(DdError::BinaryMissing),
 
             Ok(output) => {
                 // If the command ran but was not successful, handle stderr output.
                 if !output.status.success() {
                     let stderr =
-                        String::from_utf8(output.stderr).map_err(|_| DdError::InvalidUTF8)?;
-                    return Err(DdError::CantRun(std::io::Error::new(
+                        String::from_utf8(output.stderr).map_err(|_| DdError::StdoutUTF8DecodeError)?;
+                    return Err(DdError::ProcessSpawnError(std::io::Error::new(
                         std::io::ErrorKind::Other,
                         stderr,
                     )));
@@ -86,7 +86,7 @@ impl Dd {
                 // Convert stdout (which contains the version info) into a String.
                 let stdout = String::from_utf8(output.stdout);
                 if stdout.is_err() {
-                    return Err(DdError::InvalidUTF8);
+                    return Err(DdError::StdoutUTF8DecodeError);
                 }
 
                 // Parse the version from stdout.
@@ -94,13 +94,13 @@ impl Dd {
                 let version_parts: Vec<&str> = version_str
                     .split_whitespace()
                     .nth(2) // Get the version string from the third element.
-                    .ok_or(DdError::InvalidOutput)?
+                    .ok_or(DdError::InvalidCommandOutput)?
                     .split('.')
                     .collect();
 
                 // If the version format is incorrect, return an error.
                 if version_parts.len() != 2 {
-                    return Err(DdError::InvalidOutput);
+                    return Err(DdError::InvalidCommandOutput);
                 }
 
                 // Parse major and minor version from the version string.
@@ -112,7 +112,7 @@ impl Dd {
                 // Check if the 'dd' binary meets the minimum version requirement.
                 if let Some(min_version) = self.min_version {
                     if version < min_version {
-                        return Err(DdError::OldVersion);
+                        return Err(DdError::VersionTooOld);
                     }
                 }
 
@@ -143,7 +143,7 @@ impl Dd {
         if let Some(input) = &self.input {
             cmd.arg(format!("if={}", input));
         } else {
-            return Err(DdError::NoInput); // 'dd' requires an input file.
+            return Err(DdError::MissingInputFile); // 'dd' requires an input file.
         }
 
         // If output file is specified, add it to the command as 'of' (output file).
@@ -371,14 +371,14 @@ impl Dd {
         match output {
             Ok(output) if output.status.success() => {
                 // Convert stdout to String and return.
-                String::from_utf8(output.stdout).map_err(|_| DdError::InvalidUTF8)
+                String::from_utf8(output.stdout).map_err(|_| DdError::StdoutUTF8DecodeError)
             }
-            Ok(output) => Err(DdError::CantRun(std::io::Error::new(
+            Ok(output) => Err(DdError::ProcessSpawnError(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 String::from_utf8(output.stderr)
                     .unwrap_or(String::from("unable to get stderr from 'dd'")),
             ))),
-            Err(e) => Err(DdError::CantRun(e)),
+            Err(e) => Err(DdError::ProcessSpawnError(e)),
         }
     }
 }

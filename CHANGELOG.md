@@ -1,6 +1,13 @@
 # Changelog
 ## [Unreleased]
 
+## [0.1.2] - 2025-03-02
+### Added
+- New comments for more information about methods.
+
+### Changed
+- Changed Error types to more informative ones.
+
 ## [0.1.1] - 2025-02-26
 ### Added
 - Better error handling in `check` method with better error messages.

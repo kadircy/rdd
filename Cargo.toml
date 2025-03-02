@@ -1,6 +1,6 @@
 [package]
 name = "rdd"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["kadircy"]
 edition = "2021"
 description = "simple library to interact with `dd` tool"
